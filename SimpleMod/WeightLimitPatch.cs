@@ -28,6 +28,7 @@ namespace WeightModification
                 public int value { get; set; }
                 //public int GetValue()
             }
+            /*
             private static bool HasRaceSize(List<RaceSize> sizelist, string c_race)
             {
                 if(sizelist == null){return false;}
@@ -40,6 +41,7 @@ namespace WeightModification
                 }
                 return false;
             }
+            */
             private static int GetRSValue(List<RaceSize> sizelist, string c_race)
             {
                 if(sizelist == null){return -999;}
@@ -61,20 +63,20 @@ namespace WeightModification
     		public static void WeightLimit_PostPatch(Chara __instance, ref int __result)
     		{
                 Chara c = __instance;
+                if(!Rule_ApplyWLMForEachRaces){return;}
+
                 string c_race = c.race.id;
-                int c_size;
+                int c_size = GetRSValue(SizeList,c_race);
                 //RaceSize rs = new RaceSize();
-                if(!HasRaceSize(SizeList,c_race))
+                if(c_size < 0)
                 {
                     RaceSize rs = new RaceSize();
                     rs.id = c_race;
                     rs.value = Main.GetSize(c_race);
                     SizeList.add(rs);
                     c_size = rs.value;
-                } else {
-                    c_size = GetRSValue(SizeList,c_race);
-                }
-    			if (c.IsPC && Rule_ApplyWLMForEachRaces){
+                } 
+    			if (c.IsPC){
     				//if(IFWMain.HasWeightLimitPenalty(c)){
     					//float rs = (float)(__result) * IFWMain.configWeightLimitMulti;
     				__result = __result * Main.GetWLMulti(c_size) / 100;

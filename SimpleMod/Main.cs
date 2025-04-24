@@ -27,7 +27,7 @@ namespace WeightModification
             public static ConfigEntry<bool> CE_Rule_BurdenMod;//R00:重荷状態を改変するかどうか
             public static ConfigEntry<bool> CE_Rule_LimitLiftingInstalled;//R01:持ち上げられるアイテムの重さを制限するかどうか
             public static ConfigEntry<bool> CE_Rule_ParasiteSupportWhenLifting;//R01:持ち上げ時に共生相手が手伝ってくれるかどうか
-            public static ConfigEntry<int> CE_Rule_CarryWeightMulti;//R01:持ち上げ可能重量（＝this * WeightLimit）[%]
+            public static ConfigEntry<int> CE_Value_CarryWeightMulti;//R01:持ち上げ可能重量（＝this * WeightLimit）[%]
             public static ConfigEntry<bool> CE_Rule_ApplyWLMultiForEachRaces;//R02:重量限界を種族ごとに変動させるかどうか
             //for Rule02-------------------------------------------
             public static ConfigEntry<string> CE_SizeSS_List;
@@ -35,6 +35,10 @@ namespace WeightModification
             //private static ConfigEntry<string> CE_SizeM_List;
             public static ConfigEntry<string> CE_SizeL_List;
             public static ConfigEntry<string> CE_SizeLL_List;
+            public static ConfigEntry<string> CE_SizeEX_List;
+
+
+
             public static ConfigEntry<int> CE_SizeSS_WLMulti;
             public static ConfigEntry<int> CE_SizeS_WLMulti;
             public static ConfigEntry<int> CE_SizeM_WLMulti;
@@ -42,6 +46,9 @@ namespace WeightModification
             public static ConfigEntry<int> CE_SizeLL_WLMulti;
             public static ConfigEntry<int> CE_SizeEX_WLMulti;
             //---------------------------------------------for Rule02
+            //Rule03------------------------------------------------------------------------------
+            public static ConfigEntry<bool> CE_Rule_ThrowableWeightLimit;//R03:投擲できる重さを制限するかどうか
+            public static ConfigEntry<int> CE_Value_ThrowableWeightMulti;//R01:持ち上げ可能重量（＝this * WeightLimit）[%]
 
 
 
@@ -56,7 +63,7 @@ namespace WeightModification
             internal static bool cf_Rule01_LiftingSupport =>  CE_Rule_ParasiteSupportWhenLifting.Value;
             internal static int cf_Rule01_CarryWeightMulti
             {
-		        get {return Mathf.Clamp(CE_Rule_CarryWeightMulti.Value,10,10000);}
+		        get {return Mathf.Clamp(CE_Value_CarryWeightMulti.Value,10,10000);}
 	        }
             //Rule02
             internal static bool cf_ApplyWLMForEachRaces =>CE_Rule_ApplyWLMultiForEachRaces.Value;
@@ -120,6 +127,12 @@ namespace WeightModification
                 if(cf_SizeSS_List.Contains(raceid)){return 0;}
                 return 2;
             }
+            //Rule03---config--------------------------------------------------
+            internal static bool cf_Rule03_LimitThrowing => CE_Rule_ThrowableWeightLimit.Value;
+            internal static int cf_Rule03_ThrowableWeightMulti
+            {
+		        get {return Mathf.Clamp(CE_Value_ThrowableWeightMulti.Value,10,10000);}
+	        }
              //loading----------------------------------------------------------------------------------------------------------
             internal void LoadConfig()
             {
@@ -129,7 +142,7 @@ namespace WeightModification
                 CE_Rule_BurdenMod = Config.Bind("#Rule00", "BurdenCalcMod", true, "Change the calculation of the burden condition.");
                 CE_Rule_LimitLiftingInstalled = Config.Bind("#Rule01", "LimitLifting", true, "Limit the weight of installed things that can be lifted.");
                 CE_Rule_ParasiteSupportWhenLifting = Config.Bind("#Rule01", "LiftingSupport", true, "Parasitic mates help with the lifting.");
-                CE_Rule_CarryWeightMulti = Config.Bind("#Rule01_CarryWeight", "CarryWeightMulti", 1000, "Multiplier of weight to be lifted [%]");
+                CE_Value_CarryWeightMulti = Config.Bind("#Rule01_Value", "CarryWeightMulti", 1000, "Multiplier of weight to be lifted [%]");
                 CE_Rule_ApplyWLMultiForEachRaces = Config.Bind("#Rule02", "ApplyWLMultiForEachRaces", true, "Apply Weight Limit multiplier for each races.");
 
                 CE_SizeSS_List = Config.Bind("#Rule02_Value-RaceSize", "Size SS List", "fairy,snail,slime,rat,quickling,metal", "[SS]A list of strings separated by commas.");
@@ -144,6 +157,9 @@ namespace WeightModification
                 CE_SizeL_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "SS WL Multi", 75, "[%]Multiplier of weight limit for races of size L");
                 CE_SizeLL_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "SS WL Multi", 100, "[%]Multiplier of weight limit for races of size LL");
                 CE_SizeEX_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "SS WL Multi", 200, "[%]Multiplier of weight limit for races of exclusive list");
+
+                CE_Rule_ThrowableWeightLimit = Config.Bind("#Rule03", "LimitThrowing", true, "Set a weight limit on throwing");
+                CE_Value_ThrowableWeightMulti = Config.Bind("#Rule03_Value", "ThrowableWeightMulti", 50, "Multiplier for throwable weight [%]");
 
             }
             private void Start()
