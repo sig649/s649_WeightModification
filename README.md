@@ -1,0 +1,2 @@
+# s649_weightModification
+重荷状態の算出方法を変更したりするMOD
