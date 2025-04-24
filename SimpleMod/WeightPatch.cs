@@ -1,0 +1,230 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using BepInEx;
+using HarmonyLib;
+
+using UnityEngine;
+using BepInEx.Configuration;
+using System.IO;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
+using WeightModification.PatchMain;
+
+namespace WeightModification
+{//namespace main
+    namespace WeightPatch
+    {//namespace sub
+        [HarmonyPatch]
+        internal class WeightMain
+        {//class[WeightMain]
+            //----nakami---entry----------------
+            private static void Lg(string text, int lv = 0){
+                Main.Lg(text,lv);
+            }
+            private static string SName(Card c){
+                return Main.SName(c);
+            }
+            private static string SName(Chara c){
+                return Main.SName(c);
+            }
+            private static string SName(Thing c){
+                return Main.SName(c);
+            }
+            private static int Higher(int a, int b){return (a > b)? a : b;}
+            private static int GetHighestThingsWeight(ThingContainer things)
+            {
+                int hw = 0;
+                if(things == null){Lg("[WM][GHTW]things is null",2);}
+                foreach (Thing thing in things)
+                {
+                    Lg("[WM]thing/" + thing.ToString(),2);
+                    int tw = thing.ChildrenAndSelfWeight;
+                    hw = Higher(hw,tw);//if(hw < tw){hw = tw;}
+                    //_childrenWeight += thing.ChildrenAndSelfWeight;
+                }
+                //for debug
+                string dt = "[WM]";
+                dt += "Method:" + "GHTW" + "/";
+                //dt += "Name:" + SName(__instance) + "/";
+                dt += "hw:" + hw.ToString() + "/";
+                Lg(dt,1);
+                //---------
+                return hw;
+            }
+            //-----nakami---harmony-------------
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Chara), "CalcBurden")]
+            internal static bool CalcBurdenPrefix(Chara __instance)//sourceEA23.128
+            {//method CalcBurdenPrefix
+                if(!Main.cf_Rule00_BurdenMod){return true;}
+                
+                int hw = GetHighestThingsWeight(__instance.things);
+                int bd = hw * 100 / Mathf.Max(1, __instance.WeightLimit);
+                //ThingContainer things = __instance.things;
+                /*
+                foreach (Thing thing in __instance.things)
+                {
+                    int tw = thing.ChildrenAndSelfWeight;
+                    if(hw > tw){hw = tw;}
+                    //_childrenWeight += thing.ChildrenAndSelfWeight;
+                }
+                */
+
+                if (bd < 0)
+                {
+                    bd = 1000;
+                }
+                if (EClass.debug.ignoreWeight && __instance.IsPC)
+                {
+                    bd = 0;
+                }
+                __instance.burden.Set(bd);
+                __instance.SetDirtySpeed();
+
+                //for debug-----------------------------------------------------
+                string dt = "[WM]";
+                dt += "Fook:" + "CalcBurden" + "/";
+                dt += "Name:" + SName(__instance) + "/";
+                //dt += "T:" + string.Join(" , ", array)__instance.things + "/";
+                dt += "hw:" + hw.ToString() + "/";
+                dt += "bd:" + bd.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                dt += "cw:" + __instance.ChildrenWeight.ToString() + "/";
+                Lg(dt,0);
+                //------------------------------------------------------------debug
+                return false;
+            }//method CalcBurdenPrefix
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Chara), "GetBurden")]
+            internal static bool GetBurdenPrefix(Chara __instance, int __result, ref Card t, ref int num)//source EA23.128
+            {//method GetBurdenPrefix
+                int hw = GetHighestThingsWeight(__instance.things);
+                //int num2 = (base.ChildrenWeight + ((t != null) ? ((num == -1) ? t.ChildrenAndSelfWeight : (t.SelfWeight * num)) : 0)) * 100 / WeightLimit;
+                int num2 = (Higher(hw, ((t != null) ? ((num == -1) ? t.ChildrenAndSelfWeight : (t.SelfWeight * num)) : 0))) * 100 / __instance.WeightLimit;
+
+                if (num2 < 0)
+                {
+                    num2 = 1000;
+                }
+                if (EClass.debug.ignoreWeight && __instance.IsPC)
+                {
+                    num2 = 0;
+                }
+                int num3 = ((num2 >= 100) ? ((num2 - 100) / 10 + 1) : 0);
+                if (num3 > 9)
+                {
+                    num3 = 9;
+                }
+                __result =  num3;
+
+                //for debug------------------------------------------------------------
+                string dt = "[WM]";
+                dt += "Fook:" + "GetBurden" + "/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "res:" + __result.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                
+                dt += "hw:" + hw.ToString() + "/";
+                int tw = 0;
+                if(t != null)
+                {
+                    tw = (num == -1)? t.ChildrenAndSelfWeight : (t.SelfWeight * num);
+                    dt += "tw:" + tw.ToString() + "/";
+                }
+                Lg(dt,0);
+                //-----------------------------------------------------------------debug
+
+                return false;
+            }//method GetBurdenPrefix
+                
+        }//class[WeightMain]
+        
+    }//namespace sub
+}//namespace main
+
+
+
+//trash---------------------------------------------------------------------
+/*
+[HarmonyPrefix]
+            [HarmonyPatch(typeof(Card), "ChildrenWeight", MethodType.Getter)]
+            internal static bool ChildrenWeightPatch(Card __instance, int __result, int ____childrenWeight)//source EA23.128N
+            {//method:ChildrenWeightPatch
+                //Card c = __instance;
+                
+                if (__instance.dirtyWeight)
+                {
+                    ____childrenWeight = 0;
+                    if (!(__instance.trait is TraitMagicChest))
+                    {
+                        int hw = 0;
+                        foreach (Thing thing in __instance.things)
+                        {
+                            int tw = thing.ChildrenAndSelfWeight;
+                            if(hw > tw){hw = tw;}
+                            //_childrenWeight += thing.ChildrenAndSelfWeight;
+                        }
+                        ____childrenWeight = hw;
+                        __instance.dirtyWeight = false;
+                        (__instance.parent as Card)?.SetDirtyWeight();
+                        if (__instance.isChara && __instance.IsPCFaction)
+                        {
+                            __instance.Chara.CalcBurden();
+                        }
+                        int cw =  ____childrenWeight;
+                        if (cw < 0 || cw > 10000000)
+                        {
+                            ____childrenWeight = 10000000;
+                        }
+                    }
+                    
+                }
+                __result =  ____childrenWeight * Mathf.Max(100 - __instance.Evalue(404), 0) / 100;
+                //for debug
+                string dt = "[WM]";
+                dt += "Fook:" + "CW" + "/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "Res:" + __result.ToString() + "/";
+                Lg(dt,1);
+                //---------
+                return false;
+            }//method:ChildrenWeightPatch
+*/
+
+/*
+                [HarmonyPostfix]
+                [HarmonyPatch(typeof(Card), "ChildrenAndSelfWeight", MethodType.Getter)]
+                internal static void ChildrenAndSelfWeightPostfix(Card __instance, int __result)
+                {
+                    int cw = __instance.ChildrenWeight;
+                    int sw = __instance.SelfWeight;
+                    __result = (cw > sw)? cw : sw;
+                    //for debug
+                    string dt = "[WM]";
+                    dt += "Fook:" + "CSW" + "/";
+                    dt += "Name:" + SName(__instance) + "/";
+                    dt += "Res:" + __result.ToString() + "/";
+                    Lg(dt,0);
+                    //---------
+                }
+
+                [HarmonyPostfix]
+                [HarmonyPatch(typeof(Card), "ChildrenAndSelfWeightSingle", MethodType.Getter)]
+                internal static void ChildrenAndSelfWeightSinglePostfix(Card __instance, int __result)
+                {
+                    __result = __instance.ChildrenAndSelfWeight;
+
+                    //for debug
+                    string dt = "[WM]";
+                    dt += "Fook:" + "CSWS" + "/";
+                    dt += "Name:" + SName(__instance) + "/";
+                    dt += "Res:" + __result.ToString() + "/";
+                    Lg(dt,0);
+                    //---------
+                }
+                */
