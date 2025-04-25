@@ -38,7 +38,7 @@ namespace WeightModification
                     else if (ch / ph > 10){return 1;}
                     else {return 0;}
                 } else {
-                    return -1 * SizeDif(p,c);
+                    return -1 * SizeDif(ph,ch);
                 }
                 
             }

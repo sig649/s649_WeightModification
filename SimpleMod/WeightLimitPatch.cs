@@ -18,16 +18,18 @@ namespace WeightModification
 {//namespace main
     namespace WeightLimitPatch
     {//namespace sub
+        internal class RaceSize
+        {
+            public string id { get; set; }
+            public int value { get; set; }
+                //public int GetValue()
+        }
+
         [HarmonyPatch]
         internal class WLPMain
         {//class[WLPMain]
             //entry---------------------------
-            internal class RaceSize
-            {
-                public string id { get; set; }
-                public int value { get; set; }
-                //public int GetValue()
-            }
+            
             /*
             private static bool HasRaceSize(List<RaceSize> sizelist, string c_race)
             {
@@ -55,7 +57,7 @@ namespace WeightModification
                 return -999;
             }
             private static bool Rule_ApplyWLMForEachRaces => Main.cf_ApplyWLMForEachRaces;
-            var SizeList = new List<RaceSize>();
+            private static List<RaceSize> SizeList = new List<RaceSize>();
             
             //----nakami-------------------
             [HarmonyPostfix]
@@ -73,7 +75,7 @@ namespace WeightModification
                     RaceSize rs = new RaceSize();
                     rs.id = c_race;
                     rs.value = Main.GetSize(c_race);
-                    SizeList.add(rs);
+                    SizeList.Add(rs);
                     c_size = rs.value;
                 } 
     			if (c.IsPC){

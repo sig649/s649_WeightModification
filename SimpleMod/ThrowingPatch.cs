@@ -19,11 +19,11 @@ namespace WeightModification
     namespace ThrowablePatch
     {//namespace sub
         [HarmonyPatch]
-        internal class TPMain
-        {//class[TPMain]
+        internal class ThrowMain
+        {//class[ThrowMain]
             //---entry-----------------------
-            private bool Rule_LimitThrowing => Main.cf_Rule03_LimitThrowing;
-            private int value_ThrowableWM => Main.cf_Rule03_ThrowableWeightMulti;
+            private static bool Rule_LimitThrowing => Main.cf_Rule03_LimitThrowing;
+            private static int value_ThrowableWM => Main.cf_Rule03_ThrowableWeightMulti;
             //----nakami-------------------
             [HarmonyPrefix]
             [HarmonyPatch(typeof(ActThrow), "CanThrow")]
@@ -52,6 +52,6 @@ namespace WeightModification
 			    //}
 			    return true;
 		    }
-        }//class[TPMain]
+        }//class[ThrowMain]
     }//namespace sub
 }//namespace main
