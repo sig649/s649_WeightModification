@@ -197,6 +197,19 @@ namespace WeightModification
 
 //------------template--------------------------------------------------------------------------------------------
 /*
+------namespace + class---------------------------
+namespace WeightModification
+{//namespace main
+    namespace sub@@@@@@@@@@@@
+    {//namespace sub
+        [HarmonyPatch]
+        internal class @@@@@@@@@@@
+        {//class[@@@@@@@@@@]
+            //----nakami-------------------
+        }//class[@@@@@@@@@@]
+    }//namespace sub
+}//namespace main
+
 
 ------namespace---------------------------
 namespace WeightModification
