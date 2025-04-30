@@ -21,46 +21,18 @@ namespace WeightModification
         [HarmonyPatch]
         internal class WeightMain
         {//class[WeightMain]
-            //----nakami---entry----------------
-            private static void Lg(string text, int lv = 0){
-                Main.Lg(text,lv);
-            }
-            private static string SName(Card c){
-                return Main.SName(c);
-            }
-            private static string SName(Chara c){
-                return Main.SName(c);
-            }
-            private static string SName(Thing c){
-                return Main.SName(c);
-            }
-            private static int Higher(int a, int b){return (a > b)? a : b;}
-            private static int GetHighestThingsWeight(ThingContainer things)
-            {
-                int hw = 0;
-                if(things == null){Lg("[WM][GHTW]things is null",2);}
-                foreach (Thing thing in things)
-                {
-                    Lg("[WM]thing/" + thing.ToString(),2);
-                    int tw = thing.ChildrenAndSelfWeight;
-                    hw = Higher(hw,tw);//if(hw < tw){hw = tw;}
-                    //_childrenWeight += thing.ChildrenAndSelfWeight;
-                }
-                //for debug
-                string dt = "[WM]";
-                dt += "Method:" + "GHTW" + "/";
-                //dt += "Name:" + SName(__instance) + "/";
-                dt += "hw:" + hw.ToString() + "/";
-                Lg(dt,1);
-                //---------
-                return hw;
-            }
-            //-----nakami---harmony-------------
+            //----entry----------------------------------
+            //private static bool IsAllowedRuleBurdenMod(Chara c)
+            //{
+            //    return (c.IsPC)? Main.cf_Rule00_BurdenModPlayer : cf_Rule00_BurdenModNonPlayer;
+            //}
+            
+            //----harmony------------------------------------
             [HarmonyPrefix]
             [HarmonyPatch(typeof(Chara), "CalcBurden")]
             internal static bool CalcBurdenPrefix(Chara __instance)//sourceEA23.128
             {//method CalcBurdenPrefix
-                if(!Main.cf_Rule00_BurdenMod){return true;}
+                if(!Main.IsAllowedRuleBurdenMod(__instance)){return true;}
                 
                 int hw = GetHighestThingsWeight(__instance.things);
                 int bd = hw * 100 / Mathf.Max(1, __instance.WeightLimit);
@@ -86,7 +58,7 @@ namespace WeightModification
                 __instance.SetDirtySpeed();
 
                 //for debug-----------------------------------------------------
-                string dt = "[WM]";
+                string dt = "";
                 dt += "Fook:" + "CalcBurden" + "/";
                 dt += "Name:" + SName(__instance) + "/";
                 //dt += "T:" + string.Join(" , ", array)__instance.things + "/";
@@ -94,7 +66,7 @@ namespace WeightModification
                 dt += "bd:" + bd.ToString() + "/";
                 dt += "WL:" + __instance.WeightLimit.ToString() + "/";
                 dt += "cw:" + __instance.ChildrenWeight.ToString() + "/";
-                Lg(dt,0);
+                Lg(dt,1);
                 //------------------------------------------------------------debug
                 return false;
             }//method CalcBurdenPrefix
@@ -103,6 +75,8 @@ namespace WeightModification
             [HarmonyPatch(typeof(Chara), "GetBurden")]
             internal static bool GetBurdenPrefix(Chara __instance, int __result, ref Card t, ref int num)//source EA23.128
             {//method GetBurdenPrefix
+                if(!Main.IsAllowedRuleBurdenMod(__instance)){return true;}
+
                 int hw = GetHighestThingsWeight(__instance.things);
                 //int num2 = (base.ChildrenWeight + ((t != null) ? ((num == -1) ? t.ChildrenAndSelfWeight : (t.SelfWeight * num)) : 0)) * 100 / WeightLimit;
                 int num2 = (Higher(hw, ((t != null) ? ((num == -1) ? t.ChildrenAndSelfWeight : (t.SelfWeight * num)) : 0))) * 100 / __instance.WeightLimit;
@@ -123,7 +97,7 @@ namespace WeightModification
                 __result =  num3;
 
                 //for debug------------------------------------------------------------
-                string dt = "[WM]";
+                string dt = "";
                 dt += "Fook:" + "GetBurden" + "/";
                 dt += "Name:" + SName(__instance) + "/";
                 dt += "res:" + __result.ToString() + "/";
@@ -136,12 +110,48 @@ namespace WeightModification
                     tw = (num == -1)? t.ChildrenAndSelfWeight : (t.SelfWeight * num);
                     dt += "tw:" + tw.ToString() + "/";
                 }
-                Lg(dt,0);
+                Lg(dt,1);
                 //-----------------------------------------------------------------debug
 
                 return false;
             }//method GetBurdenPrefix
                 
+
+            //local  method-----------------------------------------------------------------
+            private static void Lg(string text, int lv = 0){
+                Main.Lg(text,lv);
+            }
+            private static string SName(Card c){
+                return Main.SName(c);
+            }
+            private static string SName(Chara c){
+                return Main.SName(c);
+            }
+            private static string SName(Thing c){
+                return Main.SName(c);
+            }
+            private static int Higher(int a, int b){return (a > b)? a : b;}
+
+            private static int GetHighestThingsWeight(ThingContainer things)
+            {
+                int hw = 0;
+                if(things == null){Lg("[GHTW]things is null",2);}
+                foreach (Thing thing in things)
+                {
+                    Lg("thing/" + thing.ToString(),2);
+                    int tw = thing.ChildrenAndSelfWeight;
+                    hw = Higher(hw,tw);//if(hw < tw){hw = tw;}
+                    //_childrenWeight += thing.ChildrenAndSelfWeight;
+                }
+                //for debug
+                string dt = "";
+                dt += "Method:" + "GHTW" + "/";
+                //dt += "Name:" + SName(__instance) + "/";
+                dt += "hw:" + hw.ToString() + "/";
+                Lg(dt,1);
+                //---------
+                return hw;
+            }
         }//class[WeightMain]
         
     }//namespace sub

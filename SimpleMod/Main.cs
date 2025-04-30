@@ -24,7 +24,8 @@ namespace WeightModification
             //////-----Config Entry---------------------------------------------------------------------------------- 
             //private static ConfigEntry<bool> CE_AllowFunction01WL;
             private static ConfigEntry<int> CE_LogLevel;//デバッグ用のログの出力LV　-1:出力しない 0~:第二引数に応じて出力
-            private static ConfigEntry<bool> CE_Rule_BurdenMod;//R00:重荷状態を改変するかどうか
+            private static ConfigEntry<bool> CE_Rule_BurdenModPlayer;//R00:重荷状態を改変するかどうか
+            private static ConfigEntry<bool> CE_Rule_BurdenModNonPlayer;//R00:重荷状態を改変するかどうか
             private static ConfigEntry<bool> CE_Rule_LimitLiftingInstalled;//R01:持ち上げられるアイテムの重さを制限するかどうか
             private static ConfigEntry<bool> CE_Rule_ParasiteSupportWhenLifting;//R01:持ち上げ時に共生相手が手伝ってくれるかどうか
             private static ConfigEntry<int> CE_Value_CarryWeightMulti;//R01:持ち上げ可能重量（＝this * WeightLimit）[%]
@@ -57,7 +58,9 @@ namespace WeightModification
             //public static bool cf_Allow_F01_WL =>  CE_AllowFunction01WL.Value;
             public static int cf_LogLevel =>  CE_LogLevel.Value;
             //Rule00
-            public static bool cf_Rule00_BurdenMod =>  CE_Rule_BurdenMod.Value;
+            private static bool cf_Rule00_BurdenModPlayer =>  CE_Rule_BurdenModPlayer.Value;
+            private static bool cf_Rule00_BurdenModNonPlayer =>  CE_Rule_BurdenModNonPlayer.Value;
+            
             //Rule01
             public static bool cf_Rule01_LimitLifting =>  CE_Rule_LimitLiftingInstalled.Value;
             public static bool cf_Rule01_LiftingSupport =>  CE_Rule_ParasiteSupportWhenLifting.Value;
@@ -97,7 +100,9 @@ namespace WeightModification
             {
 		        get {return Mathf.Clamp(CE_SizeEX_WLMulti.Value,1,10000);}
 	        }
-            internal static int GetWLMulti(int size)
+
+            //internal method------------------------------------------------
+            internal static int GetWLMulti(int size)//return percent
             {
                 switch(size)
                 {
@@ -127,6 +132,11 @@ namespace WeightModification
                 if(cf_SizeSS_List.Contains(raceid)){return 0;}
                 return 2;
             }
+            internal static bool IsAllowedRuleBurdenMod(Chara c)
+            {
+                return (c.IsPC)? cf_Rule00_BurdenModPlayer : cf_Rule00_BurdenModNonPlayer;
+            }
+
             //Rule03---config--------------------------------------------------
             public static bool cf_Rule03_LimitThrowing => CE_Rule_ThrowableWeightLimit.Value;
             public static int cf_Rule03_ThrowableWeightMulti
@@ -139,11 +149,13 @@ namespace WeightModification
                 //CE_AllowFunction01WL = Config.Bind("#00-General","AllowF01WL", true, "Allow control of function 01-WL");
                 CE_LogLevel = Config.Bind("#zz-Debug","LogLevel", 0, "For debug use. If the value is -1, it won't output logs");
 
-                CE_Rule_BurdenMod = Config.Bind("#Rule00", "BurdenCalcMod", true, "Change the calculation of the burden condition.");
+                CE_Rule_BurdenModPlayer = Config.Bind("#Rule00", "BurdenCalcModPlayer", true, "Change the calculation of the burden condition for PC.");
+                CE_Rule_BurdenModNonPlayer = Config.Bind("#Rule00", "BurdenCalcModNonPlayer", true, "Change the calculation of the burden condition for NPC.");
+                
                 CE_Rule_LimitLiftingInstalled = Config.Bind("#Rule01", "LimitLifting", true, "Limit the weight of installed things that can be lifted.");
-                CE_Rule_ParasiteSupportWhenLifting = Config.Bind("#Rule01", "LiftingSupport", true, "Parasitic mates help with the lifting.");
+                CE_Rule_ParasiteSupportWhenLifting = Config.Bind("#Rule01", "LiftingSupport", true, "Parasitic mates may help with the lifting.");
                 CE_Value_CarryWeightMulti = Config.Bind("#Rule01_Value", "CarryWeightMulti", 200, "Multiplier of weight to be lifted [%]");
-                CE_Rule_ApplyWLMultiForEachRaces = Config.Bind("#Rule02", "ApplyWLMultiForEachRaces", true, "Apply Weight Limit multiplier for each races.");
+                CE_Rule_ApplyWLMultiForEachRaces = Config.Bind("#Rule02", "ApplyWLMultiForEachRaces", true, "Apply diffrent Weight Limit multiplier for each races.");
 
                 CE_SizeSS_List = Config.Bind("#Rule02_List-RaceSize", "Size_SS _List", "fairy,snail,slime,rat,quickling,metal", "[SS]A list of strings separated by commas.");
                 CE_SizeS_List = Config.Bind("#Rule02_List-RaceSize", "Size_S_List", "shiba,eldercrab,rabbit,frog,centipede,mandrake,beetle,mushroom,bat,eye,wasp,imp,hand,snake,spider,crab,cat,dog,wisp,chicken,animal", "[S]A list of strings separated by commas.");
@@ -172,6 +184,7 @@ namespace WeightModification
             //methods------------------------------------------------------------------------------------------------------------
             internal static void Lg(string text, int lv = 0)
             {
+                text = "[s649-WM]" + text;
                 if(cf_LogLevel >= lv){Debug.Log(text);}
             }
 
