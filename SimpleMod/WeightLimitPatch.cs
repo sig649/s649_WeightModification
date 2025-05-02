@@ -14,6 +14,18 @@ using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 using WeightModification.PatchMain;
 
+
+/////////////////////////////////////////////////////////////////////////////////////
+/*
+    説明：WeightLimmitをRace毎に変更するするpatch
+    理由：イマーシブさのため
+    仕様：キャラのraceをリスト(sizelist)から参照する。無ければコンフィグから追加。
+        ：Racesize.value[%]をWeightLimitに乗算する。
+    対象：Chara.WeightLimit
+    条件：Rule_ApplyWLMForEachRaces && __instance.IsPC
+*/
+///////////////////////////////////////////////////////////////////////////////////////
+
 namespace WeightModification
 {//namespace main
     namespace WeightLimitPatch
@@ -30,20 +42,7 @@ namespace WeightModification
         {//class[WLPMain]
             //entry---------------------------
             
-            /*
-            private static bool HasRaceSize(List<RaceSize> sizelist, string c_race)
-            {
-                if(sizelist == null){return false;}
-                foreach(RaceSize rs in sizelist)
-                {
-                    if(rs.id == c_race)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            */
+            
             private static int GetRSValue(List<RaceSize> sizelist, string c_race)
             {
                 if(sizelist == null){return -999;}
@@ -88,3 +87,20 @@ namespace WeightModification
         }//class[WLPMain]
     }//namespace sub
 }//namespace main
+
+
+
+/*
+            private static bool HasRaceSize(List<RaceSize> sizelist, string c_race)
+            {
+                if(sizelist == null){return false;}
+                foreach(RaceSize rs in sizelist)
+                {
+                    if(rs.id == c_race)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            */

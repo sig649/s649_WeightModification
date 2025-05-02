@@ -56,10 +56,10 @@ namespace WeightModification
         
             //config--------------------------------------------------------------------------------------------------------------
             //public static bool cf_Allow_F01_WL =>  CE_AllowFunction01WL.Value;
-            public static int cf_LogLevel =>  CE_LogLevel.Value;
+            public static int Cf_LogLevel =>  CE_LogLevel.Value;
             //Rule00
-            private static bool cf_Rule00_BurdenModPlayer =>  CE_Rule_BurdenModPlayer.Value;
-            private static bool cf_Rule00_BurdenModNonPlayer =>  CE_Rule_BurdenModNonPlayer.Value;
+            public static bool Cf_Rule00_BurdenModPlayer =>  CE_Rule_BurdenModPlayer.Value;
+            public static bool Cf_Rule00_BurdenModNonPlayer =>  CE_Rule_BurdenModNonPlayer.Value;
             
             //Rule01
             public static bool cf_Rule01_LimitLifting =>  CE_Rule_LimitLiftingInstalled.Value;
@@ -134,7 +134,7 @@ namespace WeightModification
             }
             internal static bool IsAllowedRuleBurdenMod(Chara c)
             {
-                return (c.IsPC)? cf_Rule00_BurdenModPlayer : cf_Rule00_BurdenModNonPlayer;
+                return (c.IsPC)? Cf_Rule00_BurdenModPlayer : Cf_Rule00_BurdenModNonPlayer;
             }
 
             //Rule03---config--------------------------------------------------
@@ -150,7 +150,7 @@ namespace WeightModification
                 CE_LogLevel = Config.Bind("#zz-Debug","LogLevel", 0, "For debug use. If the value is -1, it won't output logs");
 
                 CE_Rule_BurdenModPlayer = Config.Bind("#Rule00", "BurdenCalcModPlayer", true, "Change the calculation of the burden condition for PC.");
-                CE_Rule_BurdenModNonPlayer = Config.Bind("#Rule00", "BurdenCalcModNonPlayer", true, "Change the calculation of the burden condition for NPC.");
+                CE_Rule_BurdenModNonPlayer = Config.Bind("#Rule00", "BurdenCalcModNonPlayer", false, "Change the calculation of the burden condition for NPC.");
                 
                 CE_Rule_LimitLiftingInstalled = Config.Bind("#Rule01", "LimitLifting", true, "Limit the weight of installed things that can be lifted.");
                 CE_Rule_ParasiteSupportWhenLifting = Config.Bind("#Rule01", "LiftingSupport", true, "Parasitic mates may help with the lifting.");
@@ -163,10 +163,10 @@ namespace WeightModification
                 CE_SizeLL_List = Config.Bind("#Rule02_List-RaceSize", "Size_LL_List", "ent,wyvern,giant,drake,dragon,dinosaur,cerberus", "[LL]A list of strings separated by commas.");
                 CE_SizeEX_List = Config.Bind("#Rule02_List-RaceSize", "Size_EX_List", "catgod,machinegod,undeadgod,god", "[Exclusive]A list of strings separated by commas.");
 
-                CE_SizeSS_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "SS_WLMulti", 10, "[%]Multiplier of weight limit for races of size SS");
-                CE_SizeS_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "S_WLMulti", 25, "[%]Multiplier of weight limit for races of size S");
-                CE_SizeM_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "M_WLMulti", 50, "[%]Multiplier of weight limit for races of size M");
-                CE_SizeL_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "L_WLMulti", 75, "[%]Multiplier of weight limit for races of size L");
+                CE_SizeSS_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "SS_WLMulti", 5, "[%]Multiplier of weight limit for races of size SS");
+                CE_SizeS_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "S_WLMulti", 10, "[%]Multiplier of weight limit for races of size S");
+                CE_SizeM_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "M_WLMulti", 25, "[%]Multiplier of weight limit for races of size M");
+                CE_SizeL_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "L_WLMulti", 50, "[%]Multiplier of weight limit for races of size L");
                 CE_SizeLL_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "LL_WLMulti", 100, "[%]Multiplier of weight limit for races of size LL");
                 CE_SizeEX_WLMulti = Config.Bind("#Rule02_Value-WLMulti", "EX_WLMulti", 200, "[%]Multiplier of weight limit for races of exclusive list");
 
@@ -185,7 +185,7 @@ namespace WeightModification
             internal static void Lg(string text, int lv = 0)
             {
                 text = "[s649-WM]" + text;
-                if(cf_LogLevel >= lv){Debug.Log(text);}
+                if(Cf_LogLevel >= lv){Debug.Log(text);}
             }
 
             internal static string SName(Chara c)
