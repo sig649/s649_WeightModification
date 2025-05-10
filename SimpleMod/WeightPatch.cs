@@ -18,11 +18,11 @@ using WeightModification.PatchMain;
 /*
     説明：Burdenの仕組みを改変するpatch
     理由：ロールプレイによる重量制限とそれに伴う所持重量の緩和を同時に行う
-    仕様：(CalcBurdenとGetBurdenをtweakする→)ChildrenWeightをpostpatchするに変更
-        ：
+    仕様：(CalcBurdenとGetBurdenをtweakする→)ChildrenWeightをpostpatchするに変更→やっぱりCB,GBをtweak
+        ：DamageHP,Stumbleもtweak
 　　　　：CW = GetHighestWeight(c)とする。GetHWは所持アイテムの中で一番重い重量を返す
     影響：TickConditions,CalcBurden,GetBurden,Stumble
-    対象：Chara.ChildrenWeight
+    対象：//////Chara.ChildrenWeight
     条件：Cf_Rule00_BurdenModPlayer Cf_Rule00_BurdenModNonPlayer
 */
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -39,40 +39,144 @@ namespace WeightModification
             private static readonly bool Cf_Rule00_BurdenModPlayer = Main.Cf_Rule00_BurdenModPlayer;
             private static readonly bool Cf_Rule00_BurdenModNonPlayer = Main.Cf_Rule00_BurdenModNonPlayer;
 
+            //static Card c_bef = null;
+            //static int orgres_bef = 0;
+            //static int result_bef = 0;
+
 
             //----harmony------------------------------------
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(Card), "ChildrenWeight", MethodType.Getter)]
-            internal static void Postfix(Card __instance, int __result) 
+            
+            
+
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Chara), "GetBurden")]
+            internal static bool GBfix(Chara __instance, int __result, ref Card t, ref int num)
             {
-                Card c = __instance;
-                int orgres = __result;
-
-                //除外
-                if (!c.isChara)
+                int hw = GetHighestThingsWeight(__instance);
+                int num2 = (hw + ((t != null) ? ((num == -1) ? t.ChildrenAndSelfWeight : (t.SelfWeight * num)) : 0)) * 100 / __instance.WeightLimit;
+                if (num2 < 0)
                 {
-                    return;
+                    num2 = 1000;
                 }
-                if ((c.IsPC && !Cf_Rule00_BurdenModPlayer) || (!c.IsPC && !Cf_Rule00_BurdenModNonPlayer))
+                if (EClass.debug.ignoreWeight && __instance.IsPC)
                 {
-                    return;
+                    num2 = 0;
                 }
-
-                __result = GetHighestThingsWeight(c);
-
+                int num3 = ((num2 >= 100) ? ((num2 - 100) / 10 + 1) : 0);
+                if (num3 > 9)
+                {
+                    num3 = 9;
+                }
+                __result = num3;
                 //for debug
-                string dt = "Nm:WeightPatch/Cl:WeightMain";
-                dt += "Harmony:Postfix/";
-                dt += "Name:" + SName(c) + "/";
-                dt += "org:" + orgres.ToString() + "/";
-                dt += "mod:" + __result.ToString() + "/";
-
-                Lg(dt, 1);
+                string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                dt += "harmony:GetB:pre/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "HW:" + hw.ToString() + "/";
+                dt += "CW:" + __instance.ChildrenWeight.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                dt += "res:" + __result.ToString() + "/";
+                Lg(dt,3);
                 //---------
+                return false;
             }
 
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Chara), "CalcBurden")]
+            internal static bool CBfix(Chara __instance)
+            {
+                int bw = GetBurdenWeight(__instance);
 
+                int num = bw * 100 / Mathf.Max(1, __instance.WeightLimit);
+                if (num < 0)
+                {
+                    num = 1000;
+                }
+                if (EClass.debug.ignoreWeight && __instance.IsPC)
+                {
+                    num = 0;
+                }
+                __instance.burden.Set(num);
+                __instance.SetDirtySpeed();
+                //for debug
+                string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                dt += "harmony:CalcB:pre/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "CW:" + __instance.ChildrenWeight.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                dt += "BW:" + bw.ToString() + "/";
+                //dt += "res:" + __result.ToString() + "/";
+                Lg(dt, 3);
+                //---------
+                return false;
+            }
 
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Chara), "Stumble")]
+            internal static bool StumbleParch(Chara __instance, ref int mtp)
+            {
+                int bw = GetHighestThingsWeight(__instance);
+
+                bool flag = EClass._map.FindThing((Thing t) => t.IsInstalled && t.pos.Equals(EClass.pc.pos) && t.trait is TraitStairsUp) != null;
+                __instance.Say(flag ? "dmgBurdenStairs" : "dmgBurdenFallDown", __instance);
+                int num = __instance.MaxHP;
+                if (__instance.Evalue(1421) > 0)
+                {
+                    num = __instance.mana.max;
+                }
+                int num2 = (num * (bw * 100 / __instance.WeightLimit) / (flag ? 100 : 200) + 1) * mtp / 100;
+                if (__instance.hp <= 0)
+                {
+                    num2 *= 2;
+                }
+                __instance.DamageHP(num2, flag ? AttackSource.BurdenStairs : AttackSource.BurdenFallDown);
+                //for debug
+                string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                dt += "harmony:Stumble:pre/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "CW:" + __instance.ChildrenWeight.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                dt += "num2:" + num2.ToString() + "/";
+                //dt += "res:" + __result.ToString() + "/";
+                Lg(dt, 3);
+                //---------
+                return false;
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Card), "DamageHP", new Type[] { typeof(int), typeof(AttackSource), typeof(Card) })]
+            internal static bool DamageHPPrefix(Card __instance, ref int dmg, ref AttackSource attackSource, ref Card origin)
+            {
+                //if(!Main.IsAllowedRuleBurdenMod()){return true;}
+
+                if (attackSource != AttackSource.Burden) { return true; }
+                int moddmg;//dmg = MaxHP * (base.ChildrenWeight * 100 / WeightLimit) / 1000 + 1;  //vanilla
+                int weightBurdenThings = GetHighestThingsWeight(__instance); ;
+                //foreach (Thing t in __instance.things)
+                //{
+                //    if (t.ChildrenAndSelfWeight > __instance.WeightLimit)
+                //    { weightBurdenThings += t.ChildrenAndSelfWeight; }
+                //}
+                //moddmg = __instance.ChildrenWeight / weightBurdenThings;
+                moddmg = dmg * weightBurdenThings / __instance.ChildrenWeight;
+
+                if (moddmg <= 0) { moddmg = 1; }
+                __instance.DamageHP(moddmg, 0, 0, attackSource, origin);
+                //for debug
+                string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                dt += "harmony:Stumble:pre/";
+                dt += "Name:" + SName(__instance) + "/";
+                dt += "CW:" + __instance.ChildrenWeight.ToString() + "/";
+                dt += "WL:" + __instance.WeightLimit.ToString() + "/";
+                dt += "dmg:" + dmg.ToString() + "/";
+                dt += "moddmg:" + moddmg.ToString() + "/";
+                //dt += "res:" + __result.ToString() + "/";
+                Lg(dt, 3);
+                //---------
+
+                return false;
+            }
 
             //local  method-----------------------------------------------------------------
             private static void Lg(string text, int lv = 0){
@@ -102,13 +206,36 @@ namespace WeightModification
                 }
                 if(hw < 0) { hw = 0;}
                 //for debug
-                string dt = "Nm:WeightPatch/Cl:WeightMain";
-                dt += "Method:" + "GHTW" + "/";
+                //string dt = "Nm:WeightPatch/Cl:WeightMain";
+                //dt += "Method:" + "GHTW" + "/";
                 //dt += "Name:" + SName(__instance) + "/";
-                dt += "hw:" + hw.ToString() + "/";
-                Lg(dt,2);
+                //dt += "hw:" + hw.ToString() + "/";
+                //Lg(dt,3);
                 //---------
                 return hw;
+            }
+
+            private static int GetBurdenWeight(Card c)
+            {
+                int bw = 0;
+                if (c.things == null) { Lg("[GHTW]things is null", 2); }
+                foreach (Thing thing in c.things)
+                {
+                    //Lg("thing/" + thing.ToString(),2);
+                    int tw = thing.ChildrenAndSelfWeight;
+                    if(tw > c.WeightLimit) { bw += tw; }
+                    //hw = Higher(hw, tw);//if(hw < tw){hw = tw;}
+                    //_childrenWeight += thing.ChildrenAndSelfWeight;
+                }
+                if (bw < 0) { bw = 0; }
+                //for debug
+                //string dt = "Nm:WeightPatch/Cl:WeightMain";
+                //dt += "Method:" + "GHTW" + "/";
+                //dt += "Name:" + SName(__instance) + "/";
+                //dt += "hw:" + hw.ToString() + "/";
+                //Lg(dt,3);
+                //---------
+                return bw;
             }
         }//class[WeightMain]
         
@@ -293,3 +420,77 @@ internal static bool CalcBurdenPrefix(Chara __instance)//sourceEA23.128
  * 
  * 
  */
+/*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Card), "ChildrenWeight", MethodType.Getter)]
+            internal static void CardCWPostfix(Card __instance, int __result) 
+            {
+                Card c = __instance;
+                int orgres = __result;
+
+                //除外
+                if (!c.isChara)
+                {
+                    return;
+                }
+                if ((c.IsPC && !Cf_Rule00_BurdenModPlayer) || (!c.IsPC && !Cf_Rule00_BurdenModNonPlayer))
+                {
+                    return;
+                }
+
+                __result = GetHighestThingsWeight(c);
+
+                //for debug
+                if(c_bef != c || result_bef != __result)
+                {
+                    c_bef = c;
+                    //orgres_bef = orgres;
+                    result_bef = __result;
+                    string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                    dt += "Harmony:CardCWPostfix/";
+                    dt += "Name:" + SName(c) + "/";
+                    dt += "org:" + orgres.ToString() + "/";
+                    dt += "mod:" + __result.ToString() + "/";
+
+                    Lg(dt, 1);
+                }
+                
+                //---------
+            }*/
+/*
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(Chara), "ChildrenWeight", MethodType.Getter)]
+            internal static void CharaCWPostfix(Chara __instance, int __result)
+            {
+                Chara c = __instance;
+                int orgres = __result;
+
+                //除外
+                if (!c.isChara)
+                {
+                    return;
+                }
+                if ((c.IsPC && !Cf_Rule00_BurdenModPlayer) || (!c.IsPC && !Cf_Rule00_BurdenModNonPlayer))
+                {
+                    return;
+                }
+
+                __result = GetHighestThingsWeight(c);
+
+                //for debug
+                if (c_bef != c || orgres_bef != orgres || result_bef != __result)
+                {
+                    c_bef = c;
+                    orgres_bef = orgres;
+                    result_bef = __result;
+                    string dt = "Nm:WeightPatch/Cl:WeightMain/";
+                    dt += "Harmony:CharaCWPostfix/";
+                    dt += "Name:" + SName(c) + "/";
+                    dt += "org:" + orgres.ToString() + "/";
+                    dt += "mod:" + __result.ToString() + "/";
+
+                    Lg(dt, 1);
+                }
+
+                //---------
+            }*/

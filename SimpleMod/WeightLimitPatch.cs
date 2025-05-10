@@ -57,7 +57,12 @@ namespace WeightModification
             }
             private static bool Rule_ApplyWLMForEachRaces => Main.cf_ApplyWLMForEachRaces;
             private static List<RaceSize> SizeList = new List<RaceSize>();
-            
+
+            static Chara c_bef = null;
+            static int res_bef = 0;
+
+
+
             //----nakami-------------------
             [HarmonyPostfix]
 		    [HarmonyPatch(typeof(Chara), "WeightLimit", MethodType.Getter)]
@@ -68,6 +73,7 @@ namespace WeightModification
 
                 string c_race = c.race.id;
                 int c_size = GetRSValue(SizeList,c_race);
+                int orgres = __result;
                 //RaceSize rs = new RaceSize();
                 if(c_size < 0)
                 {
@@ -81,9 +87,24 @@ namespace WeightModification
     				//if(IFWMain.HasWeightLimitPenalty(c)){
     					//float rs = (float)(__result) * IFWMain.configWeightLimitMulti;
     				__result = __result * Main.GetWLMulti(c_size) / 100;
-    				//}
-	    		}
-		    }
+                    //}
+                    //for debug
+                    if(c_bef != c || res_bef != __result)
+                    {
+                        c_bef = c;
+                        res_bef = __result;
+                        string dt = "Nm:WeightLimitPatch/Cl:WeightMain";
+                        dt += "harmony:WL:post/";
+                        dt += "Name:" + Main.SName(__instance) + "/";
+                        dt += "c_size:" + c_size.ToString() + "/";
+                        dt += "res:" + __result.ToString() + "/";
+                        dt += "org:" + orgres.ToString() + "/";
+                        Main.Lg(dt, 3);
+                    }
+                    
+                    //---------
+                }
+            }
         }//class[WLPMain]
     }//namespace sub
 }//namespace main
