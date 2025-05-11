@@ -86,7 +86,7 @@ namespace WeightModification
             [HarmonyPatch(typeof(Chara), "CalcBurden")]
             internal static bool CBfix(Chara __instance)
             {
-                int bw = GetBurdenWeight(__instance);
+                int bw = GetHighestThingsWeight(__instance);
 
                 int num = bw * 100 / Mathf.Max(1, __instance.WeightLimit);
                 if (num < 0)
